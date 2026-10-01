@@ -1,0 +1,212 @@
+/** Project trust + workspace records under ~/.piwin */
+
+export type ProjectTrustLevel = 'untrusted' | 'trusted';
+
+/** Project-scoped network allowlist (remembered after explicit user allow). */
+export type ProjectNetworkPolicy = {
+  /** Hostnames allowed for web_fetch without re-prompt (lowercase). */
+  allowedFetchHosts: string[];
+  /** When true, web_search does not re-prompt for this project. */
+  allowWebSearch: boolean;
+};
+
+export type ProjectRecord = {
+  path: string;
+  trust: ProjectTrustLevel;
+  displayName?: string;
+  lastOpenedAt: string;
+  createdAt: string;
+  networkPolicy?: ProjectNetworkPolicy;
+  /** Project-scoped bash command patterns allowed without prompting (ADR 0019). */
+  bashAllowlist?: string[];
+  /** Project-scoped file write paths allowed without prompting (ADR 0019). */
+  fileWriteAllowlist?: string[];
+  /**
+   * Opaque id of the shared git dir. Same for every worktree of one repo.
+   * Remembered checkout identity, retained if the directory disappears.
+   */
+  gitRepositoryId?: string;
+  /** True when this path is the primary (non-linked) worktree. */
+  isPrimaryWorktree?: boolean;
+  /** Live listing status: current branch, or a detached HEAD short label. */
+  currentBranch?: string;
+  /**
+   * Git checkout root (`rev-parse --show-toplevel`). Same for a remembered
+   * subdirectory of one checkout; different for linked worktrees.
+   * Remembered checkout identity; the Host refreshes it while the path exists.
+   */
+  gitRootPath?: string;
+  /**
+   * True when `path` is the checkout root itself or a symlink to it (not a
+   * subdirectory). Two records sharing `gitRootPath` that are both checkout
+   * roots are aliases of one directory, so the sidebar folds them.
+   */
+  isCheckoutRoot?: boolean;
+  /** Host listing state; missing paths retain their session history in the sidebar. */
+  workspaceAvailability?: 'missing';
+};
+
+/** A Git checkout discovered from a registered repository, opened or not. */
+export type ProjectWorktreeListing = {
+  gitRepositoryId: string;
+  path: string;
+  branch: string | null;
+  isPrimary: boolean;
+};
+
+export type ProjectStoreDocument = {
+  version: 1;
+  projects: ProjectRecord[];
+};
+
+/** Response for `project/list`; ordered by most recently opened first. */
+export type ProjectListData = {
+  projects: ProjectRecord[];
+  /** Existing user worktrees in repositories containing a registered project. */
+  worktrees?: ProjectWorktreeListing[];
+  /**
+   * A checkout probe or worktree inventory missed the Host's budget; list
+   * again shortly to complete the sidebar snapshot.
+   */
+  gitWorkspacePending?: true;
+};
+
+export function createEmptyNetworkPolicy(): ProjectNetworkPolicy {
+  return {
+    allowedFetchHosts: [],
+    allowWebSearch: false,
+  };
+}
+
+/**
+ * Flattened view of project-remembered tool permissions for Settings UI.
+ * `key` is stable for revoke (e.g. network:web_search, network:fetch:example.com).
+ */
+export type RememberedPermission = {
+  key: string;
+  action: string;
+  detail: string;
+  createdAt?: string;
+};
+
+export type ProjectPermissionsListData = {
+  projectPath: string;
+  permissions: RememberedPermission[];
+};
+
+export type ProjectPermissionsRevokeData = {
+  projectPath: string;
+  key: string;
+  ok: true;
+};
+
+/** Single directory entry for the workspace file tree. */
+export type ProjectDirEntry = {
+  name: string;
+  /** Relative path from project root (posix-style, no leading slash). */
+  relativePath: string;
+  kind: 'file' | 'directory';
+  /** Bytes when known for files; omitted for directories. */
+  sizeBytes?: number;
+};
+
+/** Response for `project/list-dir`. */
+export type ProjectListDirData = {
+  projectPath: string;
+  /** Relative directory listed (empty string = root). */
+  relativePath: string;
+  entries: ProjectDirEntry[];
+};
+
+/** Response for `project/read-file` (text preview; images may include a data URL). */
+export type ProjectReadFileData = {
+  projectPath: string;
+  relativePath: string;
+  /** Absolute path under project root. */
+  absolutePath: string;
+  /** UTF-8 text (may be truncated). Empty when `isBinary` and no text decode. */
+  content: string;
+  byteSize: number;
+  truncated: boolean;
+  /** When true, host refused to decode as text (binary/too large). */
+  isBinary: boolean;
+  mimeHint?: string;
+  /**
+   * Inline media preview for image files under the project root.
+   * Set when the host can safely base64-encode the bytes for the Desktop
+   * file-tree viewer (asset protocol cannot scope arbitrary project paths).
+   */
+  previewDataUrl?: string;
+  /**
+   * Set instead of `previewDataUrl` when the inline data URL would not fit in
+   * one Host wire frame. The client fetches `previewRange` slices of this raw
+   * size and concatenates their base64 into the data URL.
+   */
+  previewChunkBytes?: number;
+  /**
+   * Downscaled WebP sent alongside `previewChunkBytes` so the viewer paints
+   * in one round trip while the full-resolution slices load.
+   */
+  previewThumbDataUrl?: string;
+  /** Present on a `previewRange` read: base64 of the requested raw slice. */
+  previewChunk?: { offset: number; base64Data: string };
+};
+
+/**
+ * Raw bytes per ranged image-preview slice. Same wire budget as media reads;
+ * a multiple of 3 so every non-final slice base64-encodes without padding and
+ * slices concatenate into one valid data URL.
+ */
+export const PROJECT_PREVIEW_CHUNK_BYTES = 384 * 1024;
+
+/**
+ * Encoded bytes a `project/read-file` response may spend on inline preview
+ * payload (data URL + text content) before switching to ranged slices. Stays
+ * under the 1 MiB Host wire frame with envelope headroom.
+ */
+export const PROJECT_PREVIEW_INLINE_WIRE_BYTES = 900 * 1024;
+
+/** Longest edge of the placeholder preview for a ranged image. */
+export const PROJECT_PREVIEW_THUMB_EDGE_PX = 1024;
+
+/**
+ * One file the Host matched for a name/relative-path query.
+ * Paths stay project-root-relative so a remote client never learns a Host
+ * absolute path it did not already have.
+ */
+export type ProjectFileMatch = {
+  /** Relative path from project root (posix-style, no leading slash). */
+  relativePath: string;
+  /** Bytes when the Host could stat the match. */
+  sizeBytes?: number;
+};
+
+/**
+ * Response for `project/find-file`.
+ *
+ * Desktop path chips carry whatever text the agent wrote in the message, which
+ * is often only a file name (`shot.png`) while the file lives in a subfolder.
+ * This bounded search lets the client resolve that miss instead of reporting a
+ * file that plainly exists as "not found".
+ */
+export type ProjectFindFileData = {
+  projectPath: string;
+  /** Normalized query the Host searched for (posix-style). */
+  query: string;
+  /** Bounded matches, shallowest first. */
+  matches: ProjectFileMatch[];
+  /**
+   * True when the walk stopped at its budget, so the list may be incomplete.
+   * Callers must not treat "one match + truncated" as a unique candidate.
+   */
+  truncated: boolean;
+};
+
+/** Hard cap on matches returned by `project/find-file`. */
+export const PROJECT_FIND_FILE_MAX_MATCHES = 20;
+
+/**
+ * Entries the walk may visit before giving up. Keeps a click on a stray file
+ * name from turning into an unbounded scan of a monorepo.
+ */
+export const PROJECT_FIND_FILE_MAX_VISITED = 20_000;

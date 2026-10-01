@@ -1,0 +1,45 @@
+{
+  "sessionBackend": {
+    "schemaVersion": 1,
+    "id": "grok",
+    "name": "Grok Build",
+    "version": "1.0.0",
+    "minHostVersion": "0.0.0",
+    "protocol": "piwin-agent-stdio",
+    "protocolVersion": 1,
+    "minHostProtocolVersion": 1,
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "verifiedCliVersions": [
+      "1.0.41",
+      "1.0.44",
+      "1.0.46"
+    ],
+    "helpUrl": "https://grok.com",
+    "artifact": {
+      "format": "node-esm",
+      "entrypoint": "dist/agent.mjs",
+      "sha256": "283c95201c8fa7718447db0a2a521ee9e9e851c5436ab76e97e3771b8acdc3e6",
+      "byteSize": 147936
+    },
+    "compatibleRevisions": [],
+    "unversionedBindingCompatible": false,
+    "outputDirectories": [
+      {
+        "id": "images",
+        "base": "user-home",
+        "relativePath": ".grok/sessions/{encodedWorkingDirectory}/{backendSessionId}/images",
+        "kind": "image"
+      },
+      {
+        "id": "videos",
+        "base": "user-home",
+        "relativePath": ".grok/sessions/{encodedWorkingDirectory}/{backendSessionId}/videos",
+        "kind": "video"
+      }
+    ]
+  }
+}

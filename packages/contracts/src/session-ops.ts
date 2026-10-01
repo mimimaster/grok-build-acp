@@ -1,0 +1,103 @@
+/**
+ * Session product operations for CE-CHAT (pin / search / truncate-resend).
+ * Index projection lives under `~/.piwin/sessions-index/`.
+ */
+import type { SessionListLifecycle } from './session-list-page.js';
+
+/** FTS / projection search over product session index. */
+export type SessionSearchQuery = {
+  query: string;
+  /** @deprecated Use scope-based filtering. */
+  projectPath?: string;
+  scope?: import('./host.js').SessionScope;
+  /** Match the same explicit lifecycle projection used by paged navigation. */
+  lifecycle?: SessionListLifecycle;
+  limit?: number;
+  /** When true, only pinned sessions (if pin index is available). */
+  pinnedOnly?: boolean;
+};
+
+export type SessionSearchHit = {
+  sessionId: string;
+  /** @deprecated Use scope to determine project path. */
+  projectPath: string;
+  scope?: import('./host.js').SessionScope;
+  workingDirectory?: string;
+  score?: number;
+  snippet?: string;
+  /** Message id when hit is message-level rather than session metadata. */
+  messageId?: string;
+  name?: string;
+  updatedAt?: string;
+  isPinned?: boolean;
+  /** Disk residency. Absent means local; body search is skipped when not local. */
+  storage?: import('./session-storage.js').SessionStorageInfo;
+};
+
+export type SessionSearchResult = {
+  hits: SessionSearchHit[];
+  query: string;
+};
+
+/** Product-layer truncate for edit/resend (does not require Pi JSONL rewind). */
+export type SessionTruncateFromInput = {
+  sessionId: string;
+  /**
+   * Delete this message and its entire subtree (every descendant branch,
+   * ADR 0055). When the subtree contains the active path, the session falls
+   * back to the target's parent.
+   */
+  messageId: string;
+};
+
+export type SessionTruncateFromResult = {
+  sessionId: string;
+  removedCount: number;
+  remainingCount: number;
+};
+
+/** CE-SHARE-01: local session export (MD/HTML). */
+export type SessionExportFormat = 'md' | 'html';
+
+export type SessionExportDestination = 'file' | 'content';
+
+export type SessionExportInput = {
+  sessionId: string;
+  format?: SessionExportFormat;
+  /** Replace tool card outputs with a placeholder. */
+  redactTools?: boolean;
+  /**
+   * Absolute path for the host to write.
+   * When omitted, host writes under ~/.piwin/sessions/<id>/exports/.
+   */
+  outputPath?: string;
+  /**
+   * Defaults to `file`. `content` returns the rendered document in the
+   * response and does not write a host-side file.
+   */
+  destination?: SessionExportDestination;
+};
+
+export type SessionExportData = {
+  sessionId: string;
+  format: SessionExportFormat;
+  redactTools: boolean;
+  /** Absolute path of the written export file. Omitted for `content`. */
+  path?: string;
+  /** Rendered document. Present when `destination` is `content`. */
+  content?: string;
+  byteLength: number;
+};
+
+/** Compact a temporary session snapshot and write only its summary as Markdown. */
+export type SessionCompactExportData = {
+  sessionId: string;
+  format: 'md';
+  /** Absolute path of the written compact summary. */
+  path: string;
+  byteLength: number;
+  summary?: string;
+  tokensBefore?: number;
+  tokensAfter?: number;
+  durationMs?: number;
+};

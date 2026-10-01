@@ -1,0 +1,183 @@
+import type { MediaAttachmentRef } from './host.js';
+import type { HealthToolCardSummary } from './apple-health.js';
+
+/**
+ * Stable result contract for Host-owned Agent tools.
+ *
+ * The result is intentionally transport-neutral. `output` remains text so it
+ * can be projected to Pi's text content, while `details` carries structured
+ * facts such as a Job or Run identity. Executors must not return a bare
+ * string once their tool family has migrated to this contract.
+ *
+ * `images` are ephemeral model-facing pixels. Adapters project them to Pi
+ * `ImageContent`. Product transcript/UI must use `details.attachments` paths,
+ * never this base64.
+ */
+
+export type ToolResultDetails = Record<string, unknown> & {
+  jobId?: string;
+  runId?: string;
+  /** Durable media outputs that the product UI may render as attachments. */
+  attachments?: MediaAttachmentRef[];
+  /** Marks model-visible health summaries so memory/Notes/RAG skip them. */
+  sensitivity?: 'health';
+  /** Stable detailed reason for a mapped client-tool outcome. */
+  reason?: string;
+  /** Bounded Health card projection — never a second full series. */
+  health?: HealthToolCardSummary;
+  /** Versioned SessionPlan snapshot for the message-bound plan display. */
+  planDisplay?: import('./plan-display.js').PlanDisplayPayload;
+  /** Browser write/observe dispatch stage when the result is not a clean success. */
+  outcome?: 'not-started' | 'unknown';
+  /** Whether Host already attempted a bounded runtime recovery. */
+  runtimeRecovery?: import('./browser.js').BrowserRecoveryStatus;
+  /** Browser-only: the action to take instead of blindly retrying (spec §6.4). */
+  recovery?: import('./browser.js').BrowserRecoveryAction;
+  pageStateLost?: boolean;
+  nextAction?: string;
+  /** Host workspace write gate facts for gated file and shell tools. */
+  workspaceWrite?: WorkspaceWriteToolDetails;
+  /** What this one file-tool call changed (not the file's diff against HEAD). */
+  fileChange?: ToolFileChange;
+};
+
+/**
+ * One Host file-tool call's own change, from its turn-change receipt. Cards
+ * render this instead of the file's working-tree diff, which would also
+ * include other sessions' and earlier turns' edits to the same file.
+ */
+export type ToolFileChange = {
+  /** Workspace-relative path. */
+  path: string;
+  status: 'added' | 'modified' | 'deleted';
+  /** Null for binary content. */
+  additions: number | null;
+  deletions: number | null;
+  binary: boolean;
+  /** Unified patch, omitted for binary or oversized changes. */
+  patch?: string;
+};
+
+/**
+ * How a gated tool met the workspace write gate. Ordinary shell commands take
+ * the shared lease and run optimistically; `concurrentChanges` reports what
+ * other sessions changed in the workspace while such a command ran.
+ */
+export type WorkspaceWriteToolDetails = {
+  lock: 'exclusive' | 'shared';
+  /** Time spent waiting for the gate before the tool body started. */
+  queuedMs: number;
+  /** Time the tool body ran while holding the lease. */
+  executionMs?: number;
+  concurrentChanges?: {
+    /** Files other sessions wrote through Host file tools (workspace-relative). */
+    otherSessionWrites: string[];
+    /** Dirty-set changes seen during the run; may include this command's own writes. */
+    changedDuringRun: string[];
+  };
+};
+
+/**
+ * Health tool results stay in the originating session transcript. Secondary
+ * ingest (Notes, flashcards, walkthrough evidence, exports, RAG) must skip
+ * them unless a later user-initiated destination shows the scope.
+ */
+export function isHealthSensitiveToolResult(
+  source: { sensitivity?: string; kind?: string } | undefined,
+): boolean {
+  if (source === undefined) {
+    return false;
+  }
+  return source.sensitivity === 'health' || source.kind === 'health';
+}
+
+/** One raster image the next model turn may see. Raw base64, no data: prefix. */
+export type ToolResultImage = {
+  mimeType: string;
+  dataBase64: string;
+};
+
+/** Stable error codes shared by Host, SDK and RPC tool projections. */
+export type ToolResultErrorCode =
+  | 'tool-not-available'
+  | 'tool-disabled'
+  | 'permission-denied'
+  | 'aborted'
+  | 'execution-failed'
+  | 'invalid-input'
+  | 'job-failed'
+  | 'subagent-failed'
+  | 'subagent-needs-integration'
+  | 'subagent-cancelled'
+  | 'subagent-unavailable'
+  | 'subagent-unavailable-fallback-main'
+  | 'subagent-delegation-disabled'
+  | 'review-target-not-found'
+  | 'review-target-forbidden'
+  | 'review-data-expired'
+  | 'review-missing'
+  | 'stale-review'
+  | 'stale-revision'
+  | 'candidate-superseded'
+  | 'repair-limit-reached'
+  | 'continuation-worktree-missing'
+  | 'result-not-approved'
+  | 'apply-outcome-unknown'
+  | 'already-applied'
+  | 'workspace-busy'
+  | 'candidate-group-selected'
+  | 'mcp-failed'
+  | 'browser-user-has-control'
+  | 'browser-runtime-gone'
+  | 'browser-unavailable'
+  | 'browser-stale-target'
+  | 'browser-action-failed'
+  | 'browser-operation-interrupted'
+  | 'browser-agent-has-control';
+
+export type ToolResult =
+  | {
+      ok: true;
+      output: string;
+      details?: ToolResultDetails;
+      images?: ToolResultImage[];
+    }
+  | {
+      ok: false;
+      code: ToolResultErrorCode;
+      message: string;
+      details?: ToolResultDetails;
+      cancelled?: boolean;
+      retryable?: boolean;
+    };
+
+/**
+ * Stable details carried by every immediate-safety `tool-disabled` result
+ * (repair spec WP2). Consumers may rely on `domain` + `runtimeGenerationId`
+ * without re-deriving them from the message text.
+ */
+export type ToolDisabledDetails = {
+  domain: string;
+  runtimeGenerationId: string;
+};
+
+/**
+ * Build the canonical immediate-safety `tool-disabled` result. All Host
+ * admission gates (SDK and RPC share the same shape) return this exact shape
+ * so the UI and the worker proxy can treat it uniformly.
+ */
+export function toolDisabledResult(input: {
+  message: string;
+  domain: string;
+  runtimeGenerationId: string;
+}): ToolResult {
+  return {
+    ok: false,
+    code: 'tool-disabled',
+    message: input.message,
+    details: {
+      domain: input.domain,
+      runtimeGenerationId: input.runtimeGenerationId,
+    },
+  };
+}

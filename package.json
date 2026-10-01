@@ -1,0 +1,11 @@
+{
+  "name": "grok-build",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "build": "pnpm --filter @piwin/agent-grok run build && node scripts/write-extension-manifest.mjs",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck"
+  }
+}
