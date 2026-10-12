@@ -16,6 +16,7 @@ import {
   type AgentPluginFrame,
   type AgentPluginMethod,
   type AgentPluginPermissionDecision,
+  type AgentPluginRequestUsageQuery,
   type AgentPluginScope,
   type BackendRunIntervention,
   type ExternalAgentMcpServerStatus,
@@ -27,6 +28,9 @@ import { attachGrokMediaProposal } from './grok-media-proposal.js';
 import { createGrokProcessTransport } from './grok-process-transport.js';
 import { GrokSessionHandle, type GrokSessionPorts } from './grok-session-handle.js';
 import { readGrokWorkflowReport, readGrokWorkflows } from './grok-workflows.js';
+import { readGrokRequestUsage } from './read-grok-request-usage.js';
+import { readGrokNativeObservation } from './read-grok-native-observation.js';
+import { assertReplayFramesFit } from './replay-stream.js';
 
 type PendingCall = { resolve: (value: unknown) => void; reject: (error: Error) => void };
 type SessionSlot = {
@@ -49,6 +53,8 @@ export async function serveAgentPlugin(io: {
   const slots = new Map<string, SessionSlot>();
   let binaryPath: string | undefined;
   let initialized = false;
+  // Set by a Host that collects history from event frames during session/load.
+  let replayStreaming = false;
   let stopped = false;
   let writeChain = Promise.resolve();
   const write = (frame: unknown): void => {
@@ -108,6 +114,8 @@ export async function serveAgentPlugin(io: {
     switch (frame.method) {
       case 'check': return detectGrokCli({ env, ...(binaryPath ? { binaryPath } : {}) });
       case 'catalog/list': return (await withClient(undefined, (client) => client.xaiListSessions())).map(projectGrokCatalogEntry);
+      case 'catalog/native-observe': return readGrokNativeObservation(frame.params);
+      case 'catalog/usage': return readGrokRequestUsage(frame.params as AgentPluginRequestUsageQuery);
       case 'catalog/rename': return catalogMutate(frame.params, (client, id, title) => client.xaiRenameSession(id, title));
       case 'catalog/delete': return catalogMutate(frame.params, (client, id) => client.xaiDeleteSession(id));
       case 'session/new': return openSession(frame, true);
@@ -131,15 +139,16 @@ export async function serveAgentPlugin(io: {
     }
   }
 
-  function initialize(params: unknown): { agentId: 'grok'; protocolVersion: 1 } {
+  function initialize(params: unknown): { agentId: 'grok'; protocolVersion: 1; requestUsage: true; nativeObservation: true } {
     const record = asRecord(params);
     const runtime = asRecord(record?.runtime);
     if (record?.agentId !== 'grok' || typeof record.pluginRevision !== 'string' || record.hostProtocolVersion !== 1) {
       throw new PluginRequestError('invalid-request', 'unsupported plugin initialization');
     }
     if (typeof runtime?.binaryPath === 'string') binaryPath = runtime.binaryPath;
+    replayStreaming = asRecord(record.hostCapabilities)?.replayStreaming === true;
     initialized = true;
-    return { agentId: 'grok', protocolVersion: 1 };
+    return { agentId: 'grok', protocolVersion: 1, requestUsage: true, nativeObservation: true };
   }
 
   async function openSession(frame: Extract<AgentPluginFrame, { kind: 'request' }>, create: boolean, replay = false) {
@@ -184,16 +193,22 @@ export async function serveAgentPlugin(io: {
       const result = asRecord(await callHost(scope, 'intervention/event', event));
       return { accepted: result?.accepted === true };
     });
-    return {
+    const history = opened.replayEvents.map((event) => {
+      const proposed = emissionFor(slot, event);
+      return proposed.media ? { type: 'agent' as const, event: proposed.event, media: proposed.media } : { type: 'agent' as const, event: proposed.event };
+    });
+    const result = {
       backendSessionId: opened.backendSessionId,
       ...(opened.agentVersion !== undefined ? { agentVersion: opened.agentVersion } : {}),
       capabilities: createGrokSessionCapabilities(),
       options: opened.handle.getBackendOptions(),
-      replayEvents: opened.replayEvents.map((event) => {
-        const proposed = emissionFor(slot, event);
-        return proposed.media ? { type: 'agent' as const, event: proposed.event, media: proposed.media } : { type: 'agent' as const, event: proposed.event };
-      }),
     };
+    // An older Host only reads the inline array; never stream to one that did not opt in.
+    if (!replay || !replayStreaming) return { ...result, replayEvents: history };
+    assertReplayFramesFit(scope, history);
+    // Stdout order is historical order, and the count response closes the replay.
+    for (const emission of history) emit(scope, emission);
+    return { ...result, replayEvents: [], streamedReplayEventCount: history.length };
   }
 
   async function prompt(frame: Extract<AgentPluginFrame, { kind: 'request' }>) {

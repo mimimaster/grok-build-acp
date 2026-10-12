@@ -765,8 +765,8 @@ function actionVerbFor(acpKind, done) {
 function asRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value : void 0;
 }
-function readString(record2, key) {
-  const value = record2?.[key];
+function readString(record4, key) {
+  const value = record4?.[key];
   return typeof value === "string" && value !== "" ? value : void 0;
 }
 function parseStatus(value) {
@@ -1029,14 +1029,14 @@ var GrokTurnProjector = class {
   }
   /** Project one `session/update` params.update object. */
   project(update) {
-    const record2 = asRecord2(update);
+    const record4 = asRecord2(update);
     const result = { events: [], signals: [] };
-    if (record2 === void 0) {
+    if (record4 === void 0) {
       return result;
     }
-    switch (record2.sessionUpdate) {
+    switch (record4.sessionUpdate) {
       case "agent_message_chunk": {
-        const text2 = contentText(record2.content);
+        const text2 = contentText(record4.content);
         if (text2 !== void 0 && text2 !== "") {
           const messageId = this.ensureAssistantMessage(result.events);
           result.events.push({ type: "message/text_delta", messageId, delta: text2, ...this.run() });
@@ -1044,7 +1044,7 @@ var GrokTurnProjector = class {
         break;
       }
       case "agent_thought_chunk": {
-        const text2 = contentText(record2.content);
+        const text2 = contentText(record4.content);
         if (text2 !== void 0 && text2 !== "") {
           const messageId = this.ensureAssistantMessage(result.events);
           result.events.push({
@@ -1057,38 +1057,38 @@ var GrokTurnProjector = class {
         break;
       }
       case "tool_call":
-        this.projectToolCall(record2, result.events);
+        this.projectToolCall(record4, result.events);
         break;
       case "tool_call_update":
-        this.projectToolUpdate(record2, result.events);
+        this.projectToolUpdate(record4, result.events);
         break;
       case "session_info_update": {
-        if (typeof record2.title === "string" && record2.title.trim() !== "") {
-          result.signals.push({ kind: "title", title: record2.title.trim() });
+        if (typeof record4.title === "string" && record4.title.trim() !== "") {
+          result.signals.push({ kind: "title", title: record4.title.trim() });
         }
         break;
       }
       case "current_mode_update": {
-        if (typeof record2.currentModeId === "string") {
-          result.signals.push({ kind: "mode", modeId: record2.currentModeId });
+        if (typeof record4.currentModeId === "string") {
+          result.signals.push({ kind: "mode", modeId: record4.currentModeId });
         }
         break;
       }
       case "available_commands_update": {
-        if (Array.isArray(record2.availableCommands)) {
-          result.signals.push({ kind: "commands", commands: record2.availableCommands });
+        if (Array.isArray(record4.availableCommands)) {
+          result.signals.push({ kind: "commands", commands: record4.availableCommands });
         }
         break;
       }
       case "config_option_update": {
-        if (Array.isArray(record2.configOptions)) {
-          result.signals.push({ kind: "config-options", configOptions: record2.configOptions });
+        if (Array.isArray(record4.configOptions)) {
+          result.signals.push({ kind: "config-options", configOptions: record4.configOptions });
         }
         break;
       }
       case "plan": {
-        if (Array.isArray(record2.entries)) {
-          result.signals.push({ kind: "plan", entries: record2.entries });
+        if (Array.isArray(record4.entries)) {
+          result.signals.push({ kind: "plan", entries: record4.entries });
         }
         break;
       }
@@ -1113,19 +1113,19 @@ var GrokTurnProjector = class {
     this.closeAssistantMessage(events);
     return events;
   }
-  projectToolCall(record2, events) {
-    const toolCallId = typeof record2.toolCallId === "string" ? record2.toolCallId : "";
+  projectToolCall(record4, events) {
+    const toolCallId = typeof record4.toolCallId === "string" ? record4.toolCallId : "";
     if (toolCallId === "") {
       return;
     }
     const existing = this.tools.get(toolCallId);
     if (existing !== void 0) {
-      this.projectToolUpdate(record2, events);
+      this.projectToolUpdate(record4, events);
       return;
     }
     const responseMessageId = this.assistantMessageId ?? this.lastAssistantMessageId ?? this.ensureAssistantMessage(events);
     this.closeAssistantMessage(events);
-    const state = createGrokToolState(record2, this.now());
+    const state = createGrokToolState(record4, this.now());
     state.responseMessageId = responseMessageId;
     this.tools.set(toolCallId, state);
     events.push({
@@ -1140,19 +1140,19 @@ var GrokTurnProjector = class {
       events.push(this.toolEnd(state));
     }
   }
-  projectToolUpdate(record2, events) {
-    const toolCallId = typeof record2.toolCallId === "string" ? record2.toolCallId : "";
+  projectToolUpdate(record4, events) {
+    const toolCallId = typeof record4.toolCallId === "string" ? record4.toolCallId : "";
     const state = this.tools.get(toolCallId);
     if (state === void 0) {
       if (toolCallId !== "") {
-        this.projectToolCall({ ...record2, sessionUpdate: "tool_call" }, events);
+        this.projectToolCall({ ...record4, sessionUpdate: "tool_call" }, events);
       }
       return;
     }
     if (isGrokToolTerminal(state)) {
       return;
     }
-    applyGrokToolUpdate(state, record2, this.now());
+    applyGrokToolUpdate(state, record4, this.now());
     if (isGrokToolTerminal(state)) {
       events.push(this.toolEnd(state));
       return;
@@ -1209,18 +1209,18 @@ var GROK_PERMISSION_MODES = [
 function asRecord3(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value : void 0;
 }
-function readString2(record2, key) {
-  const value = record2?.[key];
+function readString2(record4, key) {
+  const value = record4?.[key];
   return typeof value === "string" && value !== "" ? value : void 0;
 }
 function parseGrokModelState(value) {
-  const record2 = asRecord3(value);
-  if (record2 === void 0 || !Array.isArray(record2.availableModels)) {
+  const record4 = asRecord3(value);
+  if (record4 === void 0 || !Array.isArray(record4.availableModels)) {
     return void 0;
   }
   const models = [];
   const defaultEffortByModel = /* @__PURE__ */ new Map();
-  for (const entry of record2.availableModels) {
+  for (const entry of record4.availableModels) {
     const model = asRecord3(entry);
     const id = readString2(model, "modelId");
     if (id === void 0) {
@@ -1258,7 +1258,7 @@ function parseGrokModelState(value) {
     models.push(option);
   }
   const state = { models, defaultEffortByModel };
-  const currentModelId = readString2(record2, "currentModelId");
+  const currentModelId = readString2(record4, "currentModelId");
   if (currentModelId !== void 0) {
     state.currentModelId = currentModelId;
   }
@@ -1287,17 +1287,17 @@ function parseGrokConfigCurrent(value) {
 function parseGrokCommands(value) {
   const commands = [];
   for (const entry of value) {
-    const record2 = asRecord3(entry);
-    const name = readString2(record2, "name");
+    const record4 = asRecord3(entry);
+    const name = readString2(record4, "name");
     if (name === void 0) {
       continue;
     }
     const command = { name };
-    const description = readString2(record2, "description");
+    const description = readString2(record4, "description");
     if (description !== void 0) {
       command.description = description;
     }
-    const hint = readString2(asRecord3(record2?.input), "hint");
+    const hint = readString2(asRecord3(record4?.input), "hint");
     if (hint !== void 0) {
       command.inputHint = hint;
     }
@@ -1428,6 +1428,8 @@ var AGENT_PLUGIN_METHODS = [
   "plugin/initialize",
   "check",
   "catalog/list",
+  "catalog/usage",
+  "catalog/native-observe",
   "catalog/rename",
   "catalog/delete",
   "session/new",
@@ -2323,8 +2325,8 @@ var EN_ANTHROPIC_NOTICE = {
 function asRecord4(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value : void 0;
 }
-function readString3(record2, key) {
-  const value = record2?.[key];
+function readString3(record4, key) {
+  const value = record4?.[key];
   return typeof value === "string" && value !== "" ? value : void 0;
 }
 function riskKindFor(acpKind) {
@@ -2342,12 +2344,12 @@ function riskKindFor(acpKind) {
   }
 }
 function parseGrokPermissionRequest(params, agentId) {
-  const record2 = asRecord4(params);
-  if (record2 === void 0 || !Array.isArray(record2.options)) {
+  const record4 = asRecord4(params);
+  if (record4 === void 0 || !Array.isArray(record4.options)) {
     return void 0;
   }
   const options = [];
-  for (const entry of record2.options) {
+  for (const entry of record4.options) {
     const option = asRecord4(entry);
     const optionId = readString3(option, "optionId");
     const kind = option?.kind;
@@ -2359,7 +2361,7 @@ function parseGrokPermissionRequest(params, agentId) {
   if (options.length === 0) {
     return void 0;
   }
-  const toolCall = asRecord4(record2.toolCall);
+  const toolCall = asRecord4(record4.toolCall);
   const acpKind = readString3(toolCall, "kind");
   const title = readString3(toolCall, "title") ?? "Grok wants to run a tool";
   const rawInput = asRecord4(toolCall?.rawInput);
@@ -2403,9 +2405,9 @@ function parseGrokPermissionRequest(params, agentId) {
   }
   return prompt;
 }
-function readNumber(record2, keys) {
+function readNumber(record4, keys) {
   for (const key of keys) {
-    const value = record2?.[key];
+    const value = record4?.[key];
     if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
       return value;
     }
@@ -2439,8 +2441,8 @@ function catalogTitle(value) {
   if (typeof value === "string") {
     return value.trim() === "" ? void 0 : value.trim();
   }
-  const record2 = asRecord4(value);
-  const text2 = readString3(record2, "text") ?? readString3(record2, "value") ?? readString3(record2, "title");
+  const record4 = asRecord4(value);
+  const text2 = readString3(record4, "text") ?? readString3(record4, "value") ?? readString3(record4, "title");
   return text2?.trim() === "" ? void 0 : text2?.trim();
 }
 function projectGrokCatalogEntry(entry) {
@@ -2991,19 +2993,19 @@ var GrokNotificationRouter = class {
    * process serves exactly one session, so there is no cross-talk.
    */
   handle(method, params, boundSessionId) {
-    const record2 = asRecord5(params);
+    const record4 = asRecord5(params);
     if (method === "_x.ai/models/update") {
       this.options.applyModels(params);
       this.sink.publishOptions();
       return;
     }
-    if (method !== "session/update" || record2 === void 0) {
+    if (method !== "session/update" || record4 === void 0) {
       return;
     }
-    if (boundSessionId !== "" && record2.sessionId !== boundSessionId) {
+    if (boundSessionId !== "" && record4.sessionId !== boundSessionId) {
       return;
     }
-    const update = asRecord5(record2.update);
+    const update = asRecord5(record4.update);
     if (this.replayBuffer !== void 0 && update?.sessionUpdate === "user_message_chunk") {
       this.replayBuffer.push(...this.replayUserMessage(update));
       return;
@@ -3581,6 +3583,270 @@ function isMissing(error) {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
 
+// src/read-grok-request-usage.ts
+import { homedir as homedir3 } from "node:os";
+import { join as join4 } from "node:path";
+
+// src/grok-request-usage.ts
+function record2(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : void 0;
+}
+function number(value) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : void 0;
+}
+function projectGrokRequestUsage(lines, query, firstTokenTimes = /* @__PURE__ */ new Map(), ownerSessionIds = /* @__PURE__ */ new Map()) {
+  const sessions = new Map(query.sessions.map((session) => [session.backendSessionId, session]));
+  const models = /* @__PURE__ */ new Map();
+  const requests = /* @__PURE__ */ new Map();
+  const fromMs = Date.parse(query.from);
+  if (!Number.isFinite(fromMs)) return [];
+  for (const line of lines) {
+    let value;
+    try {
+      value = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const entry = record2(value);
+    if (!entry || typeof entry.sid !== "string") continue;
+    const session = sessions.get(entry.sid);
+    if (!session) continue;
+    const context = record2(entry.ctx);
+    if (entry.msg === "model changed" && typeof context?.model === "string") {
+      models.set(entry.sid, context.model);
+    }
+    if (entry.msg !== "shell.turn.inference_done" || typeof entry.ts !== "string") continue;
+    const endedMs = Date.parse(entry.ts);
+    if (!Number.isFinite(endedMs) || endedMs < fromMs) continue;
+    const promptTokens = number(context?.prompt_tokens);
+    const completionTokens = number(context?.completion_tokens);
+    const durationMs = number(context?.model_elapsed_ms);
+    const loopIndex = number(context?.loop_index);
+    const processId = number(entry.pid);
+    if (promptTokens === void 0 || completionTokens === void 0 || durationMs === void 0 || loopIndex === void 0 || processId === void 0) continue;
+    const cachedTokens = number(context?.cached_prompt_tokens);
+    const cacheReadTokens = cachedTokens !== void 0 ? Math.min(cachedTokens, promptTokens) : void 0;
+    const reportedFirstTokenMs = number(context?.ttft_ms);
+    const startedMs = endedMs - durationMs;
+    const firstTokenAt = firstTokenTimes.get(entry.sid)?.find((at) => at >= startedMs && at <= endedMs);
+    const firstTokenMs = reportedFirstTokenMs ?? (firstTokenAt !== void 0 ? firstTokenAt - startedMs : void 0);
+    const modelId = models.get(entry.sid) ?? session.modelId;
+    const requestId = `${entry.sid}:${processId}:${loopIndex}:${entry.ts}`;
+    requests.set(requestId, {
+      requestId,
+      backendSessionId: ownerSessionIds.get(entry.sid) ?? entry.sid,
+      ...modelId !== void 0 ? { modelId } : {},
+      promptTokens: Math.max(0, promptTokens - (cacheReadTokens ?? 0)),
+      completionTokens,
+      ...cacheReadTokens !== void 0 ? { cacheReadTokens } : {},
+      totalTokens: promptTokens + completionTokens,
+      durationMs,
+      ...firstTokenMs !== void 0 && firstTokenMs <= durationMs ? { firstTokenMs } : {},
+      recordedAt: entry.ts,
+      timingScope: "request"
+    });
+  }
+  return [...requests.values()];
+}
+function parseGrokFirstTokenTimes(lines) {
+  const times = [];
+  for (const line of lines) {
+    let value;
+    try {
+      value = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const event = record2(value);
+    if (event?.type !== "first_token" || typeof event.ts !== "string") continue;
+    const at = Date.parse(event.ts);
+    if (Number.isFinite(at)) times.push(at);
+  }
+  return times.sort((left, right) => left - right);
+}
+
+// src/grok-usage-session-tree.ts
+import { readdir as readdir2 } from "node:fs/promises";
+import { isAbsolute, join as join3 } from "node:path";
+
+// src/read-grok-native-file.ts
+import { open as open2 } from "node:fs/promises";
+async function readGrokNativeFile(path, maxBytes, tail = false) {
+  let handle;
+  try {
+    handle = await open2(path, "r");
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") return void 0;
+    throw error;
+  }
+  try {
+    const details = await handle.stat();
+    if (!details.isFile() || !tail && details.size > maxBytes) return void 0;
+    const start = Math.max(0, details.size - maxBytes);
+    const bytes = Buffer.alloc(Math.min(details.size, maxBytes));
+    const { bytesRead } = await handle.read(bytes, 0, bytes.length, start);
+    const text2 = bytes.subarray(0, bytesRead).toString("utf8");
+    return start > 0 ? text2.slice(text2.indexOf("\n") + 1) : text2;
+  } finally {
+    await handle.close();
+  }
+}
+
+// src/grok-usage-session-tree.ts
+var MAX_SESSION_ROOTS = 512;
+var SAFE_SESSION_ID = /^[a-zA-Z0-9_-]+$/;
+async function discoverGrokUsageSessions(bound, home) {
+  const sessions = [...bound];
+  const owners = new Map(bound.map((session) => [session.backendSessionId, session.backendSessionId]));
+  for (let index = 0; index < sessions.length && index < MAX_SESSION_ROOTS; index += 1) {
+    const parent = sessions[index];
+    if (!parent) continue;
+    const root = grokSessionOutputRoot({
+      sessionId: parent.backendSessionId,
+      backendSessionId: parent.backendSessionId,
+      cwd: parent.workingDirectory
+    }, home);
+    for (const id of await listChildDirectories(join3(root, "subagents"))) {
+      if (!SAFE_SESSION_ID.test(id)) continue;
+      const raw = await readGrokNativeFile(join3(root, "subagents", id, "meta.json"), 256 * 1024);
+      const child = parseChild(raw, parent.backendSessionId);
+      if (!child || owners.has(child.backendSessionId) || sessions.length >= MAX_SESSION_ROOTS) continue;
+      owners.set(child.backendSessionId, owners.get(parent.backendSessionId) ?? parent.backendSessionId);
+      sessions.push(child);
+    }
+  }
+  return { sessions, owners };
+}
+async function listChildDirectories(path) {
+  try {
+    return (await readdir2(path, { withFileTypes: true })).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") return [];
+    throw error;
+  }
+}
+function parseChild(raw, parentSessionId) {
+  if (!raw) return void 0;
+  let value;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    return void 0;
+  }
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return void 0;
+  const meta = value;
+  if (meta.parent_session_id !== parentSessionId || typeof meta.child_session_id !== "string" || !SAFE_SESSION_ID.test(meta.child_session_id) || typeof meta.child_cwd !== "string" || !isAbsolute(meta.child_cwd)) return void 0;
+  return {
+    backendSessionId: meta.child_session_id,
+    workingDirectory: meta.child_cwd,
+    ...typeof meta.effective_model_id === "string" && meta.effective_model_id.length > 0 ? { modelId: meta.effective_model_id } : {}
+  };
+}
+
+// src/read-grok-request-usage.ts
+var MAX_LOG_BYTES = 16 * 1024 * 1024;
+async function readGrokRequestUsage(query, home = homedir3()) {
+  const { sessions, owners } = await discoverGrokUsageSessions(query.sessions, home);
+  const lines = (await readGrokNativeFile(join4(home, ".grok", "logs", "unified.jsonl"), MAX_LOG_BYTES, true) ?? "").split("\n");
+  const firstTokens = /* @__PURE__ */ new Map();
+  await Promise.all(sessions.map(async (session) => {
+    const root = grokSessionOutputRoot({
+      sessionId: session.backendSessionId,
+      backendSessionId: session.backendSessionId,
+      cwd: session.workingDirectory
+    }, home);
+    const events = (await readGrokNativeFile(join4(root, "events.jsonl"), MAX_LOG_BYTES, true) ?? "").split("\n");
+    firstTokens.set(session.backendSessionId, parseGrokFirstTokenTimes(events));
+  }));
+  return projectGrokRequestUsage(lines, { ...query, sessions }, firstTokens, owners);
+}
+
+// src/read-grok-native-observation.ts
+import { homedir as homedir4 } from "node:os";
+import { isAbsolute as isAbsolute2, join as join5 } from "node:path";
+function record3(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : void 0;
+}
+function parse(line) {
+  try {
+    return record3(JSON.parse(line));
+  } catch {
+    return void 0;
+  }
+}
+function projectGrokNativeActivity(lines) {
+  let activity = "unknown";
+  for (const line of lines) {
+    const event = parse(line);
+    if (event?.type === "turn_started") activity = "running";
+    else if (event?.type === "turn_ended") activity = "idle";
+    else if (event?.type === "permission_requested" || event?.type === "phase_changed" && event.phase === "permission_prompt") activity = "waiting";
+    else if (event?.type === "permission_resolved" || event?.type === "phase_changed") activity = "running";
+  }
+  return activity;
+}
+async function readGrokNativeObservation(value, home = homedir4()) {
+  const input = record3(value);
+  if (!input || Object.keys(input).some((key) => !["backendSessionId", "workingDirectory", "includeHistory"].includes(key)) || typeof input.backendSessionId !== "string" || !/^[a-zA-Z0-9_-]{1,160}$/.test(input.backendSessionId) || typeof input.workingDirectory !== "string" || input.workingDirectory.length > 4096 || !isAbsolute2(input.workingDirectory) || input.workingDirectory.includes("\0") || input.includeHistory !== void 0 && typeof input.includeHistory !== "boolean") throw new Error("invalid-native-observation-query");
+  const context = { sessionId: input.backendSessionId, backendSessionId: input.backendSessionId, cwd: input.workingDirectory };
+  const root = grokSessionOutputRoot(context, home);
+  const telemetry = (await readGrokNativeFile(join5(root, "events.jsonl"), 1024 * 1024, true) ?? "").split("\n");
+  const summary = parse(await readGrokNativeFile(join5(root, "summary.json"), 256 * 1024) ?? "");
+  const title = typeof summary?.generated_title === "string" ? summary.generated_title.trim() : void 0;
+  const times = telemetry.map((line) => parse(line)?.ts).filter((time) => typeof time === "string").map(Date.parse).filter(Number.isFinite);
+  if (typeof summary?.updated_at === "string") times.push(Date.parse(summary.updated_at));
+  const lastChangeUnixMs = Math.max(...times.filter(Number.isFinite));
+  const result = {
+    backendSessionId: input.backendSessionId,
+    activity: projectGrokNativeActivity(telemetry),
+    ...title ? { title } : {},
+    ...Number.isFinite(lastChangeUnixMs) ? { lastChangeUnixMs } : {}
+  };
+  if (input.includeHistory !== true) return result;
+  const history = await readGrokNativeFile(join5(root, "updates.jsonl"), 16 * 1024 * 1024, true);
+  if (history === void 0) throw new Error("native-history-unavailable");
+  const updates = history.split("\n");
+  const events = [];
+  const router = new GrokNotificationRouter(new GrokSessionOptionsState(), {
+    emitAll: () => void 0,
+    onTitle: () => void 0,
+    publishOptions: () => void 0
+  });
+  router.beginReplay(events);
+  for (const line of updates) {
+    const update = parse(line);
+    if (typeof update?.method === "string") router.handle(update.method, update.params, input.backendSessionId);
+  }
+  router.endReplay();
+  const emissions = events.map((event) => {
+    const prepared = attachGrokMediaProposal(event, context);
+    return { type: "agent", event: prepared.event, ...prepared.media ? { media: prepared.media } : {} };
+  });
+  while (Buffer.byteLength(JSON.stringify(emissions), "utf8") > 1400 * 1024 && emissions.length > 0) {
+    const nextUser = emissions.findIndex((emission, index) => index > 0 && emission.event.type === "message/start" && emission.event.role === "user");
+    if (nextUser < 0) throw new Error("native-history-turn-exceeds-frame-limit");
+    emissions.splice(0, nextUser);
+  }
+  result.replayEvents = emissions;
+  return result;
+}
+
+// src/replay-stream.ts
+function replayEventFrame(scope, emission) {
+  return { protocolVersion: 1, kind: "event", scope, emission };
+}
+function assertReplayFramesFit(scope, emissions, maxFrameBytes = AGENT_PLUGIN_MAX_FRAME_BYTES) {
+  const encoder = new TextEncoder();
+  emissions.forEach((emission, index) => {
+    const bytes = encoder.encode(JSON.stringify(replayEventFrame(scope, emission))).byteLength;
+    if (bytes > maxFrameBytes) {
+      throw new Error(
+        `historical event ${index + 1} of ${emissions.length} is ${bytes} bytes, above the ${maxFrameBytes}-byte frame limit`
+      );
+    }
+  });
+}
+
 // src/plugin-server.ts
 async function serveAgentPlugin(io) {
   const env = io.env ?? process.env;
@@ -3588,6 +3854,7 @@ async function serveAgentPlugin(io) {
   const slots = /* @__PURE__ */ new Map();
   let binaryPath;
   let initialized = false;
+  let replayStreaming = false;
   let stopped = false;
   let writeChain = Promise.resolve();
   const write = (frame) => {
@@ -3648,6 +3915,10 @@ async function serveAgentPlugin(io) {
         return detectGrokCli({ env, ...binaryPath ? { binaryPath } : {} });
       case "catalog/list":
         return (await withClient(void 0, (client) => client.xaiListSessions())).map(projectGrokCatalogEntry);
+      case "catalog/native-observe":
+        return readGrokNativeObservation(frame.params);
+      case "catalog/usage":
+        return readGrokRequestUsage(frame.params);
       case "catalog/rename":
         return catalogMutate(frame.params, (client, id, title) => client.xaiRenameSession(id, title));
       case "catalog/delete":
@@ -3695,14 +3966,15 @@ async function serveAgentPlugin(io) {
     }
   }
   function initialize(params) {
-    const record2 = asRecord6(params);
-    const runtime = asRecord6(record2?.runtime);
-    if (record2?.agentId !== "grok" || typeof record2.pluginRevision !== "string" || record2.hostProtocolVersion !== 1) {
+    const record4 = asRecord6(params);
+    const runtime = asRecord6(record4?.runtime);
+    if (record4?.agentId !== "grok" || typeof record4.pluginRevision !== "string" || record4.hostProtocolVersion !== 1) {
       throw new PluginRequestError("invalid-request", "unsupported plugin initialization");
     }
     if (typeof runtime?.binaryPath === "string") binaryPath = runtime.binaryPath;
+    replayStreaming = asRecord6(record4.hostCapabilities)?.replayStreaming === true;
     initialized = true;
-    return { agentId: "grok", protocolVersion: 1 };
+    return { agentId: "grok", protocolVersion: 1, requestUsage: true, nativeObservation: true };
   }
   async function openSession(frame, create, replay = false) {
     if (frame.scope.kind !== "session") throw new PluginRequestError("invalid-request", "session scope required");
@@ -3747,19 +4019,23 @@ async function serveAgentPlugin(io) {
     slots.set(scope.sessionId, slot);
     opened.handle.subscribe((event) => emitAgent(slot, event));
     opened.handle.subscribeRunInterventions(async (event) => {
-      const result = asRecord6(await callHost(scope, "intervention/event", event));
-      return { accepted: result?.accepted === true };
+      const result2 = asRecord6(await callHost(scope, "intervention/event", event));
+      return { accepted: result2?.accepted === true };
     });
-    return {
+    const history = opened.replayEvents.map((event) => {
+      const proposed = emissionFor(slot, event);
+      return proposed.media ? { type: "agent", event: proposed.event, media: proposed.media } : { type: "agent", event: proposed.event };
+    });
+    const result = {
       backendSessionId: opened.backendSessionId,
       ...opened.agentVersion !== void 0 ? { agentVersion: opened.agentVersion } : {},
       capabilities: createGrokSessionCapabilities(),
-      options: opened.handle.getBackendOptions(),
-      replayEvents: opened.replayEvents.map((event) => {
-        const proposed = emissionFor(slot, event);
-        return proposed.media ? { type: "agent", event: proposed.event, media: proposed.media } : { type: "agent", event: proposed.event };
-      })
+      options: opened.handle.getBackendOptions()
     };
+    if (!replay || !replayStreaming) return { ...result, replayEvents: history };
+    assertReplayFramesFit(scope, history);
+    for (const emission of history) emit(scope, emission);
+    return { ...result, replayEvents: [], streamedReplayEventCount: history.length };
   }
   async function prompt(frame) {
     const slot = requireSlot(frame);
@@ -3788,11 +4064,11 @@ async function serveAgentPlugin(io) {
     return { workflowId, text: text2 };
   }
   async function catalogMutate(params, run) {
-    const record2 = asRecord6(params);
-    if (typeof record2?.backendSessionId !== "string" || record2.title !== void 0 && typeof record2.title !== "string") {
+    const record4 = asRecord6(params);
+    if (typeof record4?.backendSessionId !== "string" || record4.title !== void 0 && typeof record4.title !== "string") {
       throw new PluginRequestError("invalid-request", "invalid catalog change");
     }
-    await withClient(void 0, (client) => run(client, record2.backendSessionId, typeof record2.title === "string" ? record2.title : ""));
+    await withClient(void 0, (client) => run(client, record4.backendSessionId, typeof record4.title === "string" ? record4.title : ""));
     return null;
   }
   async function withClient(cwd, run) {
@@ -3851,24 +4127,24 @@ var PluginRequestError = class extends Error {
   name = "PluginRequestError";
 };
 function parseDecision(value) {
-  const record2 = asRecord6(value);
-  if (record2?.cancelled === true) return { cancelled: true };
-  if (typeof record2?.optionId === "string") return { optionId: record2.optionId };
+  const record4 = asRecord6(value);
+  if (record4?.cancelled === true) return { cancelled: true };
+  if (typeof record4?.optionId === "string") return { optionId: record4.optionId };
   return { cancelled: true };
 }
 function parseIntervention(value) {
-  const record2 = asRecord6(value);
-  if (!record2 || typeof record2.interventionId !== "string" || typeof record2.revision !== "number" || typeof record2.sessionId !== "string" || typeof record2.runId !== "string" || typeof record2.runtimeGenerationId !== "string" || typeof record2.sequence !== "number" || typeof record2.text !== "string") {
+  const record4 = asRecord6(value);
+  if (!record4 || typeof record4.interventionId !== "string" || typeof record4.revision !== "number" || typeof record4.sessionId !== "string" || typeof record4.runId !== "string" || typeof record4.runtimeGenerationId !== "string" || typeof record4.sequence !== "number" || typeof record4.text !== "string") {
     throw new PluginRequestError("invalid-request", "invalid interjection");
   }
   return {
-    interventionId: record2.interventionId,
-    revision: record2.revision,
-    sessionId: record2.sessionId,
-    runId: record2.runId,
-    runtimeGenerationId: record2.runtimeGenerationId,
-    sequence: record2.sequence,
-    text: record2.text
+    interventionId: record4.interventionId,
+    revision: record4.revision,
+    sessionId: record4.sessionId,
+    runId: record4.runId,
+    runtimeGenerationId: record4.runtimeGenerationId,
+    sequence: record4.sequence,
+    text: record4.text
   };
 }
 function asRecord6(value) {
