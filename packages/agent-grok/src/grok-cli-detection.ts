@@ -12,7 +12,12 @@ import { GrokSessionOptionsState } from '@piwin/acp-agent';
 import { readGrokPermissionMode } from './grok-permission-mode.js';
 import { createGrokProcessTransport } from './grok-process-transport.js';
 
-export const GROK_VERIFIED_VERSIONS: ReadonlySet<string> = new Set(['1.0.41', '1.0.44']);
+export const GROK_VERIFIED_VERSIONS: ReadonlySet<string> = new Set([
+  '1.0.41',
+  '1.0.44',
+  '1.0.46',
+  '1.0.77',
+]);
 
 const AGENT_ID = 'grok';
 const DEFAULT_HANDSHAKE_TIMEOUT_MS = 15_000;

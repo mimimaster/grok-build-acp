@@ -2752,7 +2752,12 @@ function asText(chunk) {
 }
 
 // src/grok-cli-detection.ts
-var GROK_VERIFIED_VERSIONS = /* @__PURE__ */ new Set(["1.0.41", "1.0.44"]);
+var GROK_VERIFIED_VERSIONS = /* @__PURE__ */ new Set([
+  "1.0.41",
+  "1.0.44",
+  "1.0.46",
+  "1.0.77"
+]);
 var AGENT_ID = "grok";
 var DEFAULT_HANDSHAKE_TIMEOUT_MS = 15e3;
 var UNAVAILABLE_REASON_MAX = 200;

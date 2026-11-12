@@ -21,7 +21,7 @@ await build({
 
 // A v2 manifest must describe the exact bundle we just built: the Host verifies
 // this digest before it ever launches the adapter, bundled or downloaded.
-const version = '1.0.0';
+const version = '1.0.1';
 const bytes = await readFile(outfile);
 const sha256 = createHash('sha256').update(bytes).digest('hex');
 let sourceRevision = '0'.repeat(40);
@@ -41,7 +41,7 @@ const manifest = {
   protocolVersion: 1,
   minHostProtocolVersion: 1,
   platforms: ['darwin', 'win32', 'linux'],
-  verifiedCliVersions: ['1.0.41', '1.0.44', '1.0.46'],
+  verifiedCliVersions: ['1.0.41', '1.0.44', '1.0.46', '1.0.77'],
   helpUrl: 'https://grok.com',
   sourceRevision,
   artifact: {
@@ -51,8 +51,8 @@ const manifest = {
     sha256,
     byteSize: bytes.byteLength,
   },
-  compatibleRevisions: [],
-  unversionedBindingCompatible: false,
+  compatibleRevisions: ['54f463f20a0dfd863dbe129b0e133b25aefd44ca3920eb612b8b238b86cd8a67'],
+  unversionedBindingCompatible: true,
   // The adapter owns its own output layout; the Host only resolves what is declared here.
   outputDirectories: [
     {

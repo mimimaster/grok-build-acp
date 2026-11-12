@@ -3,7 +3,12 @@
     "schemaVersion": 1,
     "id": "grok",
     "name": "Grok Build",
-    "version": "1.0.0",
+    "description": "Official Grok Build ACP session backend for piwin",
+    "icon": {
+      "kind": "brand",
+      "id": "xai"
+    },
+    "version": "1.0.1",
     "minHostVersion": "0.0.0",
     "protocol": "piwin-agent-stdio",
     "protocolVersion": 1,
@@ -16,17 +21,20 @@
     "verifiedCliVersions": [
       "1.0.41",
       "1.0.44",
-      "1.0.46"
+      "1.0.46",
+      "1.0.77"
     ],
     "helpUrl": "https://grok.com",
     "artifact": {
       "format": "node-esm",
       "entrypoint": "dist/agent.mjs",
-      "sha256": "6fef4ef765d95480befbde5b36170eadc7f12c797031c918d7b786de75087d11",
-      "byteSize": 160815
+      "sha256": "175038b64c7c64ec6d94bdd85f366a9e5fefe971aaf8af126c7fd04cf7eff765",
+      "byteSize": 160845
     },
-    "compatibleRevisions": [],
-    "unversionedBindingCompatible": false,
+    "compatibleRevisions": [
+      "54f463f20a0dfd863dbe129b0e133b25aefd44ca3920eb612b8b238b86cd8a67"
+    ],
+    "unversionedBindingCompatible": true,
     "outputDirectories": [
       {
         "id": "images",

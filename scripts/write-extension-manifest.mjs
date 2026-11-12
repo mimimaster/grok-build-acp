@@ -18,13 +18,15 @@ const declaration = {
   schemaVersion: 1,
   id: 'grok',
   name: 'Grok Build',
-  version: '1.0.0',
+  description: 'Official Grok Build ACP session backend for piwin',
+  icon: { kind: 'brand', id: 'xai' },
+  version: '1.0.1',
   minHostVersion: '0.0.0',
   protocol: 'piwin-agent-stdio',
   protocolVersion: 1,
   minHostProtocolVersion: 1,
   platforms: ['darwin', 'win32', 'linux'],
-  verifiedCliVersions: ['1.0.41', '1.0.44', '1.0.46'],
+  verifiedCliVersions: ['1.0.41', '1.0.44', '1.0.46', '1.0.77'],
   helpUrl: 'https://grok.com',
   artifact: {
     format: 'node-esm',
@@ -32,8 +34,8 @@ const declaration = {
     sha256,
     byteSize: bytes.byteLength,
   },
-  compatibleRevisions: [],
-  unversionedBindingCompatible: false,
+  compatibleRevisions: ['54f463f20a0dfd863dbe129b0e133b25aefd44ca3920eb612b8b238b86cd8a67'],
+  unversionedBindingCompatible: true,
   outputDirectories: [
     {
       id: 'images',
